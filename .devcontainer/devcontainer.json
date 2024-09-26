@@ -1,0 +1,11 @@
+{
+    "name": "Haskell Development",
+    "image": "haskell:latest",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "haskell.haskell"
+            ]
+        }
+    }
+}
