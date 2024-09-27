@@ -1,0 +1,21 @@
+cabal-version:   3.4
+name:            haskell-static-site-generator
+version:         0.1.0.0
+homepage:        https://jkbc.io/
+license:         MIT
+license-file:    LICENSE
+author:          jakub-c
+maintainer:      
+category:        Web
+build-type:      Simple
+extra-doc-files: CHANGELOG.md
+
+common warnings
+    ghc-options: -Wall
+
+executable haskell-static-site-generator
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base ^>=4.20.0.0
+    hs-source-dirs:   app, src
+    default-language: GHC2021
