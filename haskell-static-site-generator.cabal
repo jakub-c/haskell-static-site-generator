@@ -33,6 +33,7 @@ test-suite your-project-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Main.hs
+  other-modules:       MarkdownTests
   build-depends:       base >=4.7 && <5,
                        haskell-static-site-generator,
                        HUnit

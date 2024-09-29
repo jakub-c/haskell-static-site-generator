@@ -1,18 +1,16 @@
 module Main where
 
 import Test.HUnit
-import ParseMd (parseMarkdown, MarkdownElement(..))
+import MarkdownTests (markdownTests)
 
--- Define test cases
-testParseMarkdown :: Test
-testParseMarkdown = TestCase (assertEqual "Parsing a simple header" 
-    [Header 1 "Hello, World!"] 
-    (parseMarkdown "# Hello, World!"))
+-- Define additional test groups here as needed
+-- import OtherTests (otherTests)
 
--- Group tests
+-- Group all tests
 tests :: Test
-tests = TestList [
-    TestLabel "testParseMarkdown" testParseMarkdown
+tests = TestList
+    [ TestLabel "Markdown Tests" markdownTests
+    -- , TestLabel "Other Tests" otherTests
     ]
 
 -- Run tests
