@@ -7,18 +7,20 @@ import ParseMd (parseMarkdown, MarkdownElement(..))
 testParseHeader :: Test
 testParseHeader = TestCase $
     assertEqual "Parsing a simple header"
-        [Header 1 "Hello, World!"]
+        (Right [Header 1 "Hello, World!"])
         (parseMarkdown "# Hello, World!")
 
-testParseBold :: Test
-testParseBold = TestCase $
-    assertEqual "Parsing bold text"
-        [Bold "Bold Text"]
-        (parseMarkdown "**Bold Text**")
+testSimpleMarkdown :: Test
+testSimpleMarkdown = TestCase $ assertEqual "Parsing simple markdown"
+    (Right [ Header 1 "Welcome"
+           , Paragraph "This is a paragraph."
+           , Header 2 "Subheader"
+           , Paragraph "Another paragraph here."
+           ])
+    (parseMarkdown "# Welcome\nThis is a paragraph.\n## Subheader\nAnother paragraph here.")
 
--- Group markdown-related tests
 markdownTests :: Test
 markdownTests = TestList
     [ TestLabel "testParseHeader" testParseHeader
-    , TestLabel "testParseBold" testParseBold
+    , TestLabel "testSimpleMarkdown" testSimpleMarkdown
     ]

@@ -3,29 +3,32 @@ module ParseMd
     , MarkdownElement(..)
     ) where
 
-import Data.Char (isSpace)
+import Text.Parsec
+import Text.Parsec.String (Parser)
+-- Remove this line: import Control.Applicative ((<|>))
 
 data MarkdownElement
     = Header Int String
     | Paragraph String
     | Bold String
+    | Italic String
     deriving (Show, Eq)
 
-parseMarkdown :: String -> [MarkdownElement]
-parseMarkdown = parseLines . lines
+parseMarkdown :: String -> Either ParseError [MarkdownElement]
+parseMarkdown = parse document ""
 
-parseLines :: [String] -> [MarkdownElement]
-parseLines [] = []
-parseLines (x:xs)
-    | take 2 x == "# " = Header 1 (drop 2 x) : parseLines xs
-    | take 3 x == "## " = Header 2 (drop 3 x) : parseLines xs
-    | take 4 x == "### " = Header 3 (drop 4 x) : parseLines xs
-    | all isSpace x = parseLines xs  -- Skip empty lines
-    | otherwise = Paragraph (parseBold x) : parseLines xs
+document :: Parser [MarkdownElement]
+document = many (header <|> paragraph)
 
-parseBold :: String -> String
-parseBold [] = []
-parseBold ('*':'*':xs) = 
-    let (bold, rest) = span (/= '*') xs
-    in "<strong>" ++ bold ++ "</strong>" ++ parseBold (drop 2 rest)
-parseBold (x:xs) = x : parseBold xs
+header :: Parser MarkdownElement
+header = do
+    level <- length <$> many1 (char '#')
+    space
+    content <- manyTill anyChar endOfLine
+    return $ Header level (strip content)
+
+paragraph :: Parser MarkdownElement
+paragraph = Paragraph <$> manyTill anyChar endOfLine
+
+strip :: String -> String
+strip = reverse . dropWhile (== ' ') . reverse . dropWhile (== ' ')

@@ -19,14 +19,16 @@ executable haskell-static-site-generator
     build-depends:
         base >= 4.7 && < 5,
         directory,
-        filepath
+        filepath,
+        parsec
     hs-source-dirs:   app, src
     default-language: GHC2021
 
 library
   hs-source-dirs:      src
   exposed-modules:     ParseMd
-  build-depends:       base >=4.7 && <5
+  build-depends:       base >=4.7 && <5,
+                       parsec
   default-language:    Haskell2010
 
 test-suite your-project-test
@@ -36,5 +38,6 @@ test-suite your-project-test
   other-modules:       MarkdownTests
   build-depends:       base >=4.7 && <5,
                        haskell-static-site-generator,
-                       HUnit
+                       HUnit,
+                       parsec
   default-language:    Haskell2010
