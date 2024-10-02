@@ -1,6 +1,7 @@
 module ParseMd
     ( parseMarkdown
     , MarkdownElement(..)
+    , InlineElement(..)
     ) where
 
 import Text.Parsec
@@ -9,7 +10,11 @@ import Text.Parsec.String (Parser)
 
 data MarkdownElement
     = Header Int String
-    | Paragraph String
+    | Paragraph [InlineElement]
+    deriving (Show, Eq)
+
+data InlineElement
+    = PlainText String
     | Bold String
     | Italic String
     deriving (Show, Eq)
@@ -28,7 +33,10 @@ header = do
     return $ Header level (strip content)
 
 paragraph :: Parser MarkdownElement
-paragraph = Paragraph <$> manyTill anyChar endOfLine
+paragraph = Paragraph <$> many1 inlineElement
+
+inlineElement :: Parser InlineElement
+inlineElement = PlainText <$> many1 (noneOf "\n")
 
 strip :: String -> String
 strip = reverse . dropWhile (== ' ') . reverse . dropWhile (== ' ')

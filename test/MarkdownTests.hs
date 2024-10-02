@@ -1,7 +1,7 @@
 module MarkdownTests (markdownTests) where
 
 import Test.HUnit
-import ParseMd (parseMarkdown, MarkdownElement(..))
+import ParseMd (parseMarkdown, MarkdownElement(..), InlineElement(..))
 
 -- Define markdown-related test cases
 testParseHeader :: Test
@@ -13,9 +13,9 @@ testParseHeader = TestCase $
 testSimpleMarkdown :: Test
 testSimpleMarkdown = TestCase $ assertEqual "Parsing simple markdown"
     (Right [ Header 1 "Welcome"
-           , Paragraph "This is a paragraph."
+           , Paragraph [PlainText "This is a paragraph."]
            , Header 2 "Subheader"
-           , Paragraph "Another paragraph here."
+           , Paragraph [PlainText "Another paragraph here."]
            ])
     (parseMarkdown "# Welcome\nThis is a paragraph.\n## Subheader\nAnother paragraph here.")
 
