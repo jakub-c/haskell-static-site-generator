@@ -1,26 +1,20 @@
-module MarkdownTests (markdownTests) where
+module MarkdownTests (spec) where
 
-import Test.HUnit
+import Test.Hspec
 import ParseMd (parseMarkdown, MarkdownElement(..), InlineElement(..))
 
--- Define markdown-related test cases
-testParseHeader :: Test
-testParseHeader = TestCase $
-    assertEqual "Parsing a simple header"
-        (Right [Header 1 "Hello, World!"])
-        (parseMarkdown "# Hello, World!")
+spec :: Spec
+spec = do
+  describe "parseMarkdown" $ do
+    it "parses a simple header" $
+      parseMarkdown "# Hello, World!\n" `shouldBe` Right [Header 1 "Hello, World!"]
 
-testSimpleMarkdown :: Test
-testSimpleMarkdown = TestCase $ assertEqual "Parsing simple markdown"
-    (Right [ Header 1 "Welcome"
-           , Paragraph [PlainText "This is a paragraph."]
-           , Header 2 "Subheader"
-           , Paragraph [PlainText "Another paragraph here."]
-           ])
-    (parseMarkdown "# Welcome\nThis is a paragraph.\n## Subheader\nAnother paragraph here.")
+    it "parses simple markdown" $
+      parseMarkdown "# Welcome\nThis is a paragraph.\n## Subheader\nAnother paragraph here.\n" `shouldBe`
+        Right [ Header 1 "Welcome"
+              , Paragraph [PlainText "This is a paragraph."]
+              , Header 2 "Subheader"
+              , Paragraph [PlainText "Another paragraph here."]
+              ]
 
-markdownTests :: Test
-markdownTests = TestList
-    [ TestLabel "testParseHeader" testParseHeader
-    , TestLabel "testSimpleMarkdown" testSimpleMarkdown
-    ]
+    -- You can add more test cases here following the same pattern
