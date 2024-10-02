@@ -23,7 +23,7 @@ parseMarkdown :: String -> Either ParseError [MarkdownElement]
 parseMarkdown = parse document ""
 
 document :: Parser [MarkdownElement]
-document = many (header <|> paragraph)
+document = many (header <|> paragraph <* optional (many1 newline))
 
 header :: Parser MarkdownElement
 header = do
