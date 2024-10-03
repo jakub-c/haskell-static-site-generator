@@ -6,6 +6,7 @@ module ParseMd
 
 import Text.Parsec
 import Text.Parsec.String (Parser)
+import Text.Parsec (try)
 -- Remove this line: import Control.Applicative ((<|>))
 
 data MarkdownElement
@@ -33,10 +34,16 @@ header = do
     return $ Header level (strip content)
 
 paragraph :: Parser MarkdownElement
-paragraph = Paragraph <$> many1 inlineElement
+paragraph = Paragraph <$> many1 inlineElement <* endOfLine
 
 inlineElement :: Parser InlineElement
-inlineElement = PlainText <$> many1 (noneOf "\n")
+inlineElement = try italicText <|> plainText
+
+plainText :: Parser InlineElement
+plainText = PlainText <$> many1 (noneOf "*\n")
+
+italicText :: Parser InlineElement
+italicText = Italic <$> between (char '*') (char '*') (many1 (noneOf "*\n"))
 
 strip :: String -> String
 strip = reverse . dropWhile (== ' ') . reverse . dropWhile (== ' ')

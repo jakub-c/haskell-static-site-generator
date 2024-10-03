@@ -9,6 +9,10 @@ spec = do
     it "parses a simple header" $
       parseMarkdown "# Hello, World!\n" `shouldBe` Right [Header 1 "Hello, World!"]
 
+    it "parses italic text" $
+      parseMarkdown "*italic text*\n" `shouldBe` Right [Paragraph [Italic "italic text"]]
+
+
     it "parses simple markdown" $
       parseMarkdown "# Welcome\nThis is a paragraph.\n## Subheader\nAnother paragraph here.\n" `shouldBe`
         Right [ Header 1 "Welcome"
