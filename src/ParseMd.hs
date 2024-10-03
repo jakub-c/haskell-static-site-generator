@@ -37,13 +37,16 @@ paragraph :: Parser MarkdownElement
 paragraph = Paragraph <$> many1 inlineElement <* endOfLine
 
 inlineElement :: Parser InlineElement
-inlineElement = try italicText <|> plainText
+inlineElement = try italicText <|> boldText <|> plainText
 
 plainText :: Parser InlineElement
 plainText = PlainText <$> many1 (noneOf "*\n")
 
 italicText :: Parser InlineElement
 italicText = Italic <$> between (char '*') (char '*') (many1 (noneOf "*\n"))
+
+boldText :: Parser InlineElement
+boldText = Bold <$> between (string "**") (string "**") (many1 (noneOf "*\n"))
 
 strip :: String -> String
 strip = reverse . dropWhile (== ' ') . reverse . dropWhile (== ' ')
