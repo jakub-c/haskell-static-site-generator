@@ -1,32 +1,39 @@
-import System.Directory (createDirectoryIfMissing, listDirectory, copyFile, doesDirectoryExist)
-import System.FilePath (takeExtension, (</>))
-import Control.Monad (when, unless)
+import System.Directory
+    ( copyFile,
+      createDirectoryIfMissing,
+      doesDirectoryExist,
+      listDirectory )
+import System.FilePath ( (</>), takeExtension )
+import Control.Monad (unless, when)
 
 main :: IO ()
 main = do
-    copyMdFiles
-
-copyMdFiles :: IO ()
-copyMdFiles = do
     let sourceDir = "notes"
     let destDir = "dist"
     
-    -- Check if source directory exists
+    sourceExists <- checkSourceDirectory sourceDir
+    when sourceExists $ do
+        createDestinationDirectory destDir
+        mdFiles <- listMarkdownFiles sourceDir
+        copyMarkdownFiles sourceDir destDir mdFiles
+
+checkSourceDirectory :: FilePath -> IO Bool
+checkSourceDirectory sourceDir = do
     sourceExists <- doesDirectoryExist sourceDir
     unless sourceExists $ do
         putStrLn $ "Error: Source directory '" ++ sourceDir ++ "' does not exist."
-        return ()
+    return sourceExists
 
-    -- If source directory exists, proceed with copying
-    when sourceExists $ do
-        -- Create destination directory if it doesn't exist
-        createDirectoryIfMissing True destDir
-        
-        -- Get list of files in source directory
-        files <- listDirectory sourceDir
-        
-        -- Filter for .md files and copy them
-        let mdFiles = filter (\f -> takeExtension f == ".md") files
-        mapM_ (\file -> copyFile (sourceDir </> file) (destDir </> file)) mdFiles
-        
-        putStrLn $ "Copied " ++ show (length mdFiles) ++ " .md files from " ++ sourceDir ++ " to " ++ destDir
+createDestinationDirectory :: FilePath -> IO ()
+createDestinationDirectory destDir = do
+    createDirectoryIfMissing True destDir
+
+listMarkdownFiles :: FilePath -> IO [FilePath]
+listMarkdownFiles sourceDir = do
+    files <- listDirectory sourceDir
+    return $ filter (\f -> takeExtension f == ".md") files
+
+copyMarkdownFiles :: FilePath -> FilePath -> [FilePath] -> IO ()
+copyMarkdownFiles sourceDir destDir mdFiles = do
+    mapM_ (\file -> copyFile (sourceDir </> file) (destDir </> file)) mdFiles
+    putStrLn $ "Copied " ++ show (length mdFiles) ++ " .md files from " ++ sourceDir ++ " to " ++ destDir
