@@ -1,10 +1,12 @@
 import System.Directory
-    ( copyFile,
-      createDirectoryIfMissing,
+    ( createDirectoryIfMissing,
       doesDirectoryExist,
       listDirectory )
-import System.FilePath ( (</>), takeExtension )
+import System.FilePath ( (</>), takeExtension, replaceExtension )
 import Control.Monad (unless, when)
+import CMark (commonmarkToHtml)
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 
 main :: IO ()
 main = do
@@ -15,7 +17,7 @@ main = do
     when sourceExists $ do
         createDestinationDirectory destDir
         mdFiles <- listMarkdownFiles sourceDir
-        copyMarkdownFiles sourceDir destDir mdFiles
+        convertMarkdownFiles sourceDir destDir mdFiles
 
 checkSourceDirectory :: FilePath -> IO Bool
 checkSourceDirectory sourceDir = do
@@ -25,15 +27,21 @@ checkSourceDirectory sourceDir = do
     return sourceExists
 
 createDestinationDirectory :: FilePath -> IO ()
-createDestinationDirectory destDir = do
-    createDirectoryIfMissing True destDir
+createDestinationDirectory destDir = createDirectoryIfMissing True destDir
 
 listMarkdownFiles :: FilePath -> IO [FilePath]
 listMarkdownFiles sourceDir = do
     files <- listDirectory sourceDir
     return $ filter (\f -> takeExtension f == ".md") files
 
-copyMarkdownFiles :: FilePath -> FilePath -> [FilePath] -> IO ()
-copyMarkdownFiles sourceDir destDir mdFiles = do
-    mapM_ (\file -> copyFile (sourceDir </> file) (destDir </> file)) mdFiles
-    putStrLn $ "Copied " ++ show (length mdFiles) ++ " .md files from " ++ sourceDir ++ " to " ++ destDir
+convertMarkdownFiles :: FilePath -> FilePath -> [FilePath] -> IO ()
+convertMarkdownFiles sourceDir destDir mdFiles = do
+    mapM_ convertFile mdFiles
+    putStrLn $ "Converted " ++ show (length mdFiles) ++ " markdown files to HTML"
+  where
+    convertFile file = do
+        let sourcePath = sourceDir </> file
+        let destPath = replaceExtension (destDir </> file) ".html"
+        markdown <- TIO.readFile sourcePath
+        let html = commonmarkToHtml [] markdown
+        TIO.writeFile destPath html
