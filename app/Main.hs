@@ -48,7 +48,33 @@ convertMarkdownFiles sourceDir destDir mdFiles = do
         let sourcePath = sourceDir </> file
         let destPath = replaceExtension (destDir </> file) ".html"
         markdown <- TIO.readFile sourcePath
-        let body = commonmarkToHtml [] markdown
+        let body = replaceWikiLinks . commonmarkToHtml [] $ markdown
         let title = T.pack (takeBaseName file)
         let html = T.replace "{{title}}" title $ T.replace "{{body}}" body template
         TIO.writeFile destPath html
+
+replaceWikiLinks :: T.Text -> T.Text
+replaceWikiLinks text = processText text
+  where
+    -- Break into parts and process each
+    processText input = 
+        case T.splitOn "[[" input of
+            [] -> ""                        -- Handle empty list case
+            [singlePart] -> singlePart
+            -- Found [[ - process parts
+            firstPart:otherParts -> 
+                T.concat $ firstPart : map processPart otherParts
+
+    -- Handle each part that came after [[
+    processPart part =
+        case T.splitOn "]]" part of
+            -- No ]] found - return [[ + part
+            [partText] -> T.concat ["[[", partText]
+            -- Found ]] - make link and keep rest
+            linkText:rest -> 
+                T.concat [makeLink linkText, T.concat rest]
+            -- Empty case
+            [] -> ""
+
+    -- Convert wiki text to HTML link
+    makeLink link = T.concat ["<a href=\"", link, "\">", link, "</a>"]
