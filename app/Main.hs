@@ -10,6 +10,8 @@ import Control.Monad (unless, when)
 import CMark (commonmarkToHtml)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
+import qualified Data.Char as C
+import Data.Text (Text)
 
 main :: IO ()
 main = do
@@ -46,7 +48,7 @@ convertMarkdownFiles sourceDir destDir mdFiles = do
     convertFile :: T.Text -> FilePath -> IO ()
     convertFile template file = do
         let sourcePath = sourceDir </> file
-        let destPath = replaceExtension (destDir </> file) ".html"
+        let destPath = replaceExtension (destDir </> (T.unpack . makeSlug . T.pack $ takeBaseName file)) ".html"
         markdown <- TIO.readFile sourcePath
         let body = replaceWikiLinks . commonmarkToHtml [] $ markdown
         let title = T.pack (takeBaseName file)
@@ -77,4 +79,14 @@ replaceWikiLinks text = processText text
             [] -> ""
 
     -- Convert wiki text to HTML link
-    makeLink link = T.concat ["<a href=\"", link, "\">", link, "</a>"]
+    makeLink link = T.concat ["<a href=\"", makeSlug link, "\">", link, "</a>"]
+
+makeSlug :: Text -> Text
+makeSlug = T.intercalate "-"                -- Join parts with hyphens
+         . filter (not . T.null)            -- Remove empty parts
+         . T.split (not . C.isAlphaNum)     -- Split on non-alphanumeric chars
+         . T.toLower                        -- Convert to lowercase
+
+-- Example usage:
+-- makeSlug "Wiki Link!" -> "wiki-link"
+-- makeLink "Wiki Link!" -> "<a href="wiki-link">Wiki Link!</a>"
