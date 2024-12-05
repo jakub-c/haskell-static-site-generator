@@ -50,6 +50,7 @@ convertMarkdownFiles sourceDir destDir mdFiles = do
         let sourcePath = sourceDir </> file
         let destPath = replaceExtension (destDir </> (T.unpack . makeSlug . T.pack $ takeBaseName file)) ".html"
         markdown <- TIO.readFile sourcePath
+        let wikiLinks = extractWikiLinks markdown
         let body = replaceWikiLinks . commonmarkToHtml [] $ markdown
         let title = T.pack (takeBaseName file)
         let html = T.replace "{{title}}" title $ T.replace "{{body}}" body template
@@ -90,3 +91,18 @@ makeSlug = T.intercalate "-"                -- Join parts with hyphens
 -- Example usage:
 -- makeSlug "Wiki Link!" -> "wiki-link"
 -- makeLink "Wiki Link!" -> "<a href="wiki-link">Wiki Link!</a>"
+
+extractWikiLinks :: T.Text -> [T.Text]
+extractWikiLinks text = go text []
+    where 
+        go t acc
+            | T.null t = acc
+            | otherwise =
+                case T.breakOn "[[" t of
+                    (_, rest)
+                        | T.null rest -> acc -- No more wiki links
+                        | otherwise ->
+                            let afterOpen = T.drop 2 rest
+                                (linkText, afterLink) = T.breakOn "]]" afterOpen
+                                remaining = T.drop 2 afterLink -- Drop the closing ]]
+                            in go remaining (linkText : acc)
