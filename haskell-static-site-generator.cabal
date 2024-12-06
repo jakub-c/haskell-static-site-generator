@@ -19,6 +19,7 @@ executable haskell-static-site-generator
     build-depends:
         base >= 4.7 && < 5,
         directory,
+        containers,
         filepath,
         cmark,
         text

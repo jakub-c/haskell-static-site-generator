@@ -12,6 +12,8 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.Char as C
 import Data.Text (Text)
+import qualified Data.Map as Map
+import Data.Map (Map)
 
 main :: IO ()
 main = do
@@ -42,6 +44,17 @@ listMarkdownFiles sourceDir = do
 convertMarkdownFiles :: FilePath -> FilePath -> [FilePath] -> IO ()
 convertMarkdownFiles sourceDir destDir mdFiles = do
     template <- TIO.readFile "app/template.html"
+    
+    -- Collect wiki links from all files
+    linksMap <- collectWikiLinks sourceDir mdFiles
+    
+    -- Debug print (temporary)
+    mapM_ (\(file, links) -> do
+        putStrLn $ "Links in " ++ file ++ ":"
+        mapM_ (putStrLn . T.unpack) links
+        ) (Map.toList linksMap)
+    
+    -- Continue with existing conversion
     mapM_ (convertFile template) mdFiles
     putStrLn $ "Converted " ++ show (length mdFiles) ++ " markdown files to HTML"
   where
@@ -106,3 +119,14 @@ extractWikiLinks text = go text []
                                 (linkText, afterLink) = T.breakOn "]]" afterOpen
                                 remaining = T.drop 2 afterLink -- Drop the closing ]]
                             in go remaining (linkText : acc)
+
+type WikiLinks = Map FilePath [T.Text]
+
+collectWikiLinks :: FilePath -> [FilePath] -> IO WikiLinks
+collectWikiLinks sourceDir files = do
+    pairs <- mapM (\file -> do
+        content <- TIO.readFile (sourceDir </> file)
+        let links = extractWikiLinks content
+        return (file, links)
+        ) files
+    return $ Map.fromList pairs
