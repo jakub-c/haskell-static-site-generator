@@ -41,6 +41,18 @@ listMarkdownFiles sourceDir = do
     files <- listDirectory sourceDir
     return $ filter (\f -> takeExtension f == ".md") files
 
+-- Add new type for backlinks mapping
+type BacklinksMap = Map FilePath [FilePath]
+
+-- Add function to create backlinks map from links map
+createBacklinksMap :: WikiLinks -> BacklinksMap
+createBacklinksMap linksMap = Map.fromListWith (++)
+    [ (T.unpack linkTarget, [sourceFile])
+    | (sourceFile, links) <- Map.toList linksMap
+    , linkTarget <- links
+    ]
+
+-- Modify convertMarkdownFiles to use backlinks
 convertMarkdownFiles :: FilePath -> FilePath -> [FilePath] -> IO ()
 convertMarkdownFiles sourceDir destDir mdFiles = do
     template <- TIO.readFile "app/template.html"
@@ -48,11 +60,14 @@ convertMarkdownFiles sourceDir destDir mdFiles = do
     -- Collect wiki links from all files
     linksMap <- collectWikiLinks sourceDir mdFiles
     
-    -- Debug print (temporary)
-    mapM_ (\(file, links) -> do
-        putStrLn $ "Links in " ++ file ++ ":"
-        mapM_ (putStrLn . T.unpack) links
-        ) (Map.toList linksMap)
+    -- Create backlinks map
+    let backlinksMap = createBacklinksMap linksMap
+    
+    -- Debug print backlinks (temporary)
+    mapM_ (\(file, backlinks) -> do
+        putStrLn $ "Backlinks to " ++ file ++ ":"
+        mapM_ putStrLn backlinks
+        ) (Map.toList backlinksMap)
     
     -- Continue with existing conversion
     mapM_ (convertFile template) mdFiles
