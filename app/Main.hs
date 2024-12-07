@@ -52,7 +52,7 @@ createBacklinksMap linksMap = Map.fromListWith (++)
     , linkTarget <- links
     ]
 
--- Modify convertMarkdownFiles to use backlinks
+-- Update convertMarkdownFiles to pass backlinks
 convertMarkdownFiles :: FilePath -> FilePath -> [FilePath] -> IO ()
 convertMarkdownFiles sourceDir destDir mdFiles = do
     template <- TIO.readFile "app/template.html"
@@ -70,19 +70,26 @@ convertMarkdownFiles sourceDir destDir mdFiles = do
         ) (Map.toList backlinksMap)
     
     -- Continue with existing conversion
-    mapM_ (convertFile template) mdFiles
+    mapM_ (convertFile template sourceDir destDir backlinksMap) mdFiles
     putStrLn $ "Converted " ++ show (length mdFiles) ++ " markdown files to HTML"
-  where
-    convertFile :: T.Text -> FilePath -> IO ()
-    convertFile template file = do
-        let sourcePath = sourceDir </> file
-        let destPath = replaceExtension (destDir </> (T.unpack . makeSlug . T.pack $ takeBaseName file)) ".html"
-        markdown <- TIO.readFile sourcePath
-        let wikiLinks = extractWikiLinks markdown
-        let body = replaceWikiLinks . commonmarkToHtml [] $ markdown
-        let title = T.pack (takeBaseName file)
-        let html = T.replace "{{title}}" title $ T.replace "{{body}}" body template
-        TIO.writeFile destPath html
+
+-- Update convertFile signature to accept backlinks
+convertFile :: T.Text -> FilePath -> FilePath -> BacklinksMap -> FilePath -> IO ()
+convertFile template sourceDir destDir backlinksMap file = do
+    let sourcePath = sourceDir </> file
+    let destPath = replaceExtension (destDir </> file) ".html"
+    markdown <- TIO.readFile sourcePath
+    
+    -- Debug print backlinks for current file
+    let currentBacklinks = Map.findWithDefault [] file backlinksMap
+    putStrLn $ "Converting " ++ file ++ " with backlinks:"
+    mapM_ (\bl -> putStrLn $ "  - " ++ bl) currentBacklinks
+    
+    -- Existing conversion logic
+    let body = replaceWikiLinks $ commonmarkToHtml [] markdown
+    let title = T.pack (takeBaseName file)
+    let html = T.replace "{{title}}" title $ T.replace "{{body}}" body template
+    TIO.writeFile destPath html
 
 replaceWikiLinks :: T.Text -> T.Text
 replaceWikiLinks text = processText text
