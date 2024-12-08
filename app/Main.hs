@@ -28,7 +28,7 @@ main = do
 
 checkSourceDirectory :: FilePath -> IO Bool
 checkSourceDirectory sourceDir = do
-    sourceExists <- doesDirectoryExist sourceDir
+    sourceExists <- doesDirectoryExist(sourceDir)
     unless sourceExists $ do
         putStrLn $ "Error: Source directory '" ++ sourceDir ++ "' does not exist."
     return sourceExists
@@ -80,15 +80,20 @@ convertFile template sourceDir destDir backlinksMap file = do
     let destPath = replaceExtension (destDir </> file) ".html"
     markdown <- TIO.readFile sourcePath
     
-    -- Debug print backlinks for current file
-    let currentBacklinks = Map.findWithDefault [] file backlinksMap
-    putStrLn $ "Converting " ++ file ++ " with backlinks:"
-    mapM_ (\bl -> putStrLn $ "  - " ++ bl) currentBacklinks
+    -- Look up backlinks using base name
+    let baseName = takeBaseName file
+    let currentBacklinks = Map.findWithDefault [] baseName backlinksMap
     
-    -- Existing conversion logic
+    let backlinksHtml = T.concat 
+            [T.concat ["<li><a href=\"", makeSlug (T.pack bl) <> ".html", "\">", T.pack (takeBaseName bl), "</a></li>\n"] 
+            | bl <- currentBacklinks]
+    
+    -- Rest of the conversion logic
     let body = replaceWikiLinks $ commonmarkToHtml [] markdown
     let title = T.pack (takeBaseName file)
-    let html = T.replace "{{title}}" title $ T.replace "{{body}}" body template
+    let html = T.replace "{{title}}" title 
+             $ T.replace "{{body}}" body 
+             $ T.replace "{{backlinks}}" backlinksHtml template
     TIO.writeFile destPath html
 
 replaceWikiLinks :: T.Text -> T.Text
