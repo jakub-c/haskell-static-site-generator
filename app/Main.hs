@@ -5,7 +5,7 @@ import System.Directory
       doesDirectoryExist,
       listDirectory )
 import System.FilePath
-    ( (</>), takeExtension, replaceExtension, takeBaseName )
+    ( (</>), takeExtension, takeBaseName )
 import Control.Monad (unless, when)
 import CMark (commonmarkToHtml)
 import qualified Data.Text as T
@@ -96,7 +96,7 @@ convertFile template sourceDir destDir backlinksMap file = do
     TIO.writeFile destPath html
 
 createDestPath :: FilePath -> FilePath -> FilePath -> IO FilePath
-createDestPath destDir baseName file = 
+createDestPath destDir baseName _ = 
     if baseName == "00 - index" 
     then return $ destDir </> "index.html"
     else do
