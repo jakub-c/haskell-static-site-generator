@@ -77,24 +77,32 @@ convertMarkdownFiles sourceDir destDir mdFiles = do
 convertFile :: T.Text -> FilePath -> FilePath -> BacklinksMap -> FilePath -> IO ()
 convertFile template sourceDir destDir backlinksMap file = do
     let sourcePath = sourceDir </> file
-    let destPath = replaceExtension (destDir </> file) ".html"
+    let baseName = takeBaseName file
+    destPath <- createDestPath destDir baseName file  -- Now returns IO FilePath
     markdown <- TIO.readFile sourcePath
     
-    -- Look up backlinks using base name
-    let baseName = takeBaseName file
+    -- Rest remains the same
     let currentBacklinks = Map.findWithDefault [] baseName backlinksMap
-    
     let backlinksHtml = T.concat 
-            [T.concat ["<li><a href=\"", makeSlug (T.pack bl) <> ".html", "\">", T.pack (takeBaseName bl), "</a></li>\n"] 
+            [T.concat ["<li><a href=\"", "/notes/" <> makeSlug (T.pack (takeBaseName bl)), "\">", T.pack (takeBaseName bl), "</a></li>\n"] 
             | bl <- currentBacklinks]
     
-    -- Rest of the conversion logic
     let body = replaceWikiLinks $ commonmarkToHtml [] markdown
-    let title = T.pack (takeBaseName file)
+    let title = T.pack baseName
+    
     let html = T.replace "{{title}}" title 
              $ T.replace "{{body}}" body 
              $ T.replace "{{backlinks}}" backlinksHtml template
     TIO.writeFile destPath html
+
+createDestPath :: FilePath -> FilePath -> FilePath -> IO FilePath
+createDestPath destDir baseName file = 
+    if baseName == "00 - index" 
+    then return $ destDir </> "index.html"
+    else do
+        let noteDir = destDir </> baseName
+        createDirectoryIfMissing True noteDir
+        return $ noteDir </> "index.html"
 
 replaceWikiLinks :: T.Text -> T.Text
 replaceWikiLinks text = processText text
@@ -120,7 +128,7 @@ replaceWikiLinks text = processText text
             [] -> ""
 
     -- Convert wiki text to HTML link
-    makeLink link = T.concat ["<a href=\"", makeSlug link, "\">", link, "</a>"]
+    makeLink link = T.concat ["<a href=\"", "/notes/" <> makeSlug link, "\">", link, "</a>"]
 
 makeSlug :: Text -> Text
 makeSlug = T.intercalate "-"                -- Join parts with hyphens
