@@ -84,7 +84,7 @@ convertFile template sourceDir destDir backlinksMap file = do
     -- Rest remains the same
     let currentBacklinks = Map.findWithDefault [] baseName backlinksMap
     let backlinksHtml = T.concat 
-            [T.concat ["<li><a href=\"", "/notes/" <> makeSlug (T.pack (takeBaseName bl)), "\">", T.pack (takeBaseName bl), "</a></li>\n"] 
+            [ T.concat ["<li>", makeHtmlLink (T.pack (takeBaseName bl)) (T.pack bl), "</li>\n"]
             | bl <- currentBacklinks]
     
     let body = replaceWikiLinks $ commonmarkToHtml [] markdown
@@ -128,7 +128,7 @@ replaceWikiLinks text = processText text
             [] -> ""
 
     -- Convert wiki text to HTML link
-    makeLink link = T.concat ["<a href=\"", "/notes/" <> makeSlug link, "\">", link, "</a>"]
+    makeLink linkText = makeHtmlLink linkText linkText
 
 makeSlug :: Text -> Text
 makeSlug = T.intercalate "-"                -- Join parts with hyphens
@@ -165,3 +165,15 @@ collectWikiLinks sourceDir files = do
         return (file, links)
         ) files
     return $ Map.fromList pairs
+
+-- Add this function at module level
+makeHtmlLink :: T.Text  -- ^ Link text to display
+             -> T.Text  -- ^ Target path/name to link to
+             -> T.Text  -- ^ Generated HTML link
+makeHtmlLink displayText targetName = T.concat 
+    [ "<a href=\"/notes/"
+    , makeSlug targetName
+    , "\">"
+    , displayText
+    , "</a>"
+    ]
