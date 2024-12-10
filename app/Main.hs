@@ -3,10 +3,11 @@
 import System.Directory
     ( createDirectoryIfMissing,
       doesDirectoryExist,
-      listDirectory )
+      listDirectory,
+      copyFile )
 import System.FilePath
     ( (</>), takeExtension, takeBaseName )
-import Control.Monad (unless, when)
+import Control.Monad (unless, when, forM_)
 import CMark (commonmarkToHtml)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -19,16 +20,18 @@ main :: IO ()
 main = do
     let sourceDir = "notes"
     let destDir = "dist"
+    let staticDir = "static"
 
     sourceExists <- checkSourceDirectory sourceDir
     when sourceExists $ do
         createDestinationDirectory destDir
+        copyStaticFiles staticDir destDir  -- Add this line
         mdFiles <- listMarkdownFiles sourceDir
         convertMarkdownFiles sourceDir destDir mdFiles
 
 checkSourceDirectory :: FilePath -> IO Bool
 checkSourceDirectory sourceDir = do
-    sourceExists <- doesDirectoryExist(sourceDir)
+    sourceExists <- doesDirectoryExist (sourceDir)
     unless sourceExists $ do
         putStrLn $ "Error: Source directory '" ++ sourceDir ++ "' does not exist."
     return sourceExists
@@ -56,19 +59,19 @@ createBacklinksMap linksMap = Map.fromListWith (++)
 convertMarkdownFiles :: FilePath -> FilePath -> [FilePath] -> IO ()
 convertMarkdownFiles sourceDir destDir mdFiles = do
     template <- TIO.readFile "app/template.html"
-    
+
     -- Collect wiki links from all files
     linksMap <- collectWikiLinks sourceDir mdFiles
-    
+
     -- Create backlinks map
     let backlinksMap = createBacklinksMap linksMap
-    
+
     -- Debug print backlinks (temporary)
     mapM_ (\(file, backlinks) -> do
         putStrLn $ "Backlinks to " ++ file ++ ":"
         mapM_ putStrLn backlinks
         ) (Map.toList backlinksMap)
-    
+
     -- Continue with existing conversion
     mapM_ (convertFile template sourceDir destDir backlinksMap) mdFiles
     putStrLn $ "Converted " ++ show (length mdFiles) ++ " markdown files to HTML"
@@ -80,24 +83,24 @@ convertFile template sourceDir destDir backlinksMap file = do
     let baseName = takeBaseName file
     destPath <- createDestPath destDir baseName file  -- Now returns IO FilePath
     markdown <- TIO.readFile sourcePath
-    
+
     -- Rest remains the same
     let currentBacklinks = Map.findWithDefault [] baseName backlinksMap
-    let backlinksHtml = T.concat 
+    let backlinksHtml = T.concat
             [ T.concat ["<li>", makeHtmlLink (T.pack (takeBaseName bl)) (T.pack bl), "</li>\n"]
             | bl <- currentBacklinks]
-    
+
     let body = replaceWikiLinks $ commonmarkToHtml [] markdown
     let title = T.pack baseName
-    
-    let html = T.replace "{{title}}" title 
-             $ T.replace "{{body}}" body 
+
+    let html = T.replace "{{title}}" title
+             $ T.replace "{{body}}" body
              $ T.replace "{{backlinks}}" backlinksHtml template
     TIO.writeFile destPath html
 
 createDestPath :: FilePath -> FilePath -> FilePath -> IO FilePath
-createDestPath destDir baseName _ = 
-    if baseName == "00 - index" 
+createDestPath destDir baseName _ =
+    if baseName == "00 - index"
     then return $ destDir </> "index.html"
     else do
         let noteDir = destDir </> baseName
@@ -108,12 +111,12 @@ replaceWikiLinks :: T.Text -> T.Text
 replaceWikiLinks text = processText text
   where
     -- Break into parts and process each
-    processText input = 
+    processText input =
         case T.splitOn "[[" input of
             [] -> ""                        -- Handle empty list case
             [singlePart] -> singlePart
             -- Found [[ - process parts
-            firstPart:otherParts -> 
+            firstPart:otherParts ->
                 T.concat $ firstPart : map processPart otherParts
 
     -- Handle each part that came after [[
@@ -122,7 +125,7 @@ replaceWikiLinks text = processText text
             -- No ]] found - return [[ + part
             [partText] -> T.concat ["[[", partText]
             -- Found ]] - make link and keep rest
-            linkText:rest -> 
+            linkText:rest ->
                 T.concat [makeLink linkText, T.concat rest]
             -- Empty case
             [] -> ""
@@ -142,7 +145,7 @@ makeSlug = T.intercalate "-"                -- Join parts with hyphens
 
 extractWikiLinks :: T.Text -> [T.Text]
 extractWikiLinks text = go text []
-    where 
+    where
         go t acc
             | T.null t = acc
             | otherwise =
@@ -170,10 +173,22 @@ collectWikiLinks sourceDir files = do
 makeHtmlLink :: T.Text  -- ^ Link text to display
              -> T.Text  -- ^ Target path/name to link to
              -> T.Text  -- ^ Generated HTML link
-makeHtmlLink displayText targetName = T.concat 
+makeHtmlLink displayText targetName = T.concat
     [ "<a href=\"/notes/"
     , makeSlug targetName
     , "\">"
     , displayText
     , "</a>"
     ]
+
+-- Add this function to copy static files
+copyStaticFiles :: FilePath -> FilePath -> IO ()
+copyStaticFiles sourceDir destDir = do
+    exists <- doesDirectoryExist sourceDir
+    when exists $ do
+        files <- listDirectory sourceDir
+        forM_ files $ \file -> do 
+            let sourcePath = sourceDir </> file
+            let destPath = destDir </> file
+            copyFile sourcePath destPath
+        putStrLn $ "Copied static files to " ++ destDir
