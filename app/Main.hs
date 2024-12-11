@@ -6,7 +6,7 @@ import System.Directory
       listDirectory,
       copyFile )
 import System.FilePath
-    ( (</>), takeExtension, takeBaseName )
+    ( (</>), takeExtension, takeBaseName, takeDirectory )
 import Control.Monad (unless, when, forM_)
 import CMark (commonmarkToHtml)
 import qualified Data.Text as T
@@ -62,29 +62,33 @@ createBacklinksMap linksMap = Map.fromListWith (++)
 convertMarkdownFiles :: FilePath -> FilePath -> [FilePath] -> IO ()
 convertMarkdownFiles sourceDir destDir mdFiles = do
     template <- TIO.readFile "app/template.html"
-
-    -- Collect wiki links from all files
+    
+    -- Create notes directory
+    createDirectoryIfMissing True (destDir </> "notes")
+    
+    -- Collect wiki links and create backlinks map
     linksMap <- collectWikiLinks sourceDir mdFiles
-
-    -- Create backlinks map
     let backlinksMap = createBacklinksMap linksMap
-
-    -- Debug print backlinks (temporary)
-    mapM_ (\(file, backlinks) -> do
-        putStrLn $ "Backlinks to " ++ file ++ ":"
-        mapM_ putStrLn backlinks
-        ) (Map.toList backlinksMap)
-
-    -- Continue with existing conversion
-    mapM_ (convertFile template sourceDir destDir backlinksMap) mdFiles
+    
+    -- Process each file
+    mapM_ (\file -> do
+        let baseName = takeBaseName file
+        let destPath = if baseName == "00 - index"
+            then destDir </> "notes" </> "index.html"
+            else destDir </> "notes" </> baseName </> "index.html"
+        
+        -- Ensure directory exists
+        createDirectoryIfMissing True (takeDirectory destPath)
+        convertFile template sourceDir destDir backlinksMap file destPath
+        ) mdFiles
+    
     putStrLn $ "Converted " ++ show (length mdFiles) ++ " markdown files to HTML"
 
 -- Update convertFile signature to accept backlinks
-convertFile :: T.Text -> FilePath -> FilePath -> BacklinksMap -> FilePath -> IO ()
-convertFile template sourceDir destDir backlinksMap file = do
+convertFile :: T.Text -> FilePath -> FilePath -> BacklinksMap -> FilePath -> FilePath -> IO ()
+convertFile template sourceDir destDir backlinksMap file destPath = do
     let sourcePath = sourceDir </> file
     let baseName = takeBaseName file
-    destPath <- createDestPath destDir baseName file  -- Now returns IO FilePath
     markdown <- TIO.readFile sourcePath
 
     -- Rest remains the same
