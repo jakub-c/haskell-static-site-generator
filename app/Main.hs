@@ -18,16 +18,19 @@ import Data.Map (Map)
 
 main :: IO ()
 main = do
-    let sourceDir = "notes"
+    let sourceDir = "pages"          -- Changed from "notes" to "pages"
+    let notesDir = sourceDir </> "notes"
     let destDir = "dist"
     let staticDir = "static"
 
     sourceExists <- checkSourceDirectory sourceDir
     when sourceExists $ do
         createDestinationDirectory destDir
-        copyStaticFiles staticDir destDir  -- Add this line
-        mdFiles <- listMarkdownFiles sourceDir
-        convertMarkdownFiles sourceDir destDir mdFiles
+        copyStaticFiles staticDir destDir
+        notesExists <- doesDirectoryExist notesDir
+        when notesExists $ do
+            mdFiles <- listMarkdownFiles notesDir
+            convertMarkdownFiles notesDir destDir mdFiles
 
 checkSourceDirectory :: FilePath -> IO Bool
 checkSourceDirectory sourceDir = do
