@@ -75,9 +75,10 @@ convertMarkdownFiles sourceDir destDir mdFiles = do
     -- Process each file
     mapM_ (\file -> do
         let baseName = takeBaseName file
+        let slugName = T.unpack $ makeSlug $ T.pack baseName
         let destPath = if baseName == "00 - index"
             then destDir </> "notes" </> "index.html"
-            else destDir </> "notes" </> baseName </> "index.html"
+            else destDir </> "notes" </> slugName </> "index.html"
         
         -- Ensure directory exists
         createDirectoryIfMissing True (takeDirectory destPath)
