@@ -6,7 +6,7 @@ import System.Directory
       listDirectory,
       copyFile )
 import System.FilePath
-    ( (</>), takeExtension, takeBaseName, takeDirectory )
+    ( (</>), takeExtension, takeBaseName, takeDirectory, replaceExtension )
 import Control.Monad (unless, when, forM_)
 import CMark (commonmarkToHtml)
 import qualified Data.Text as T
@@ -27,6 +27,8 @@ main = do
     when sourceExists $ do
         createDestinationDirectory destDir
         copyStaticFiles staticDir destDir
+        processRootFiles sourceDir destDir  -- Add this line
+        
         notesExists <- doesDirectoryExist notesDir
         when notesExists $ do
             mdFiles <- listMarkdownFiles notesDir
@@ -199,3 +201,24 @@ copyStaticFiles sourceDir destDir = do
             let destPath = destDir </> file
             copyFile sourcePath destPath
         putStrLn $ "Copied static files to " ++ destDir
+
+-- Add new helper function
+processRootFiles :: FilePath -> FilePath -> IO ()
+processRootFiles sourceDir destDir = do
+    -- Get all .md files from root, excluding notes directory
+    files <- listDirectory sourceDir
+    let rootMdFiles = filter (\f -> takeExtension f == ".md") files
+    
+    -- Process each file
+    forM_ rootMdFiles $ \file -> do
+        let sourcePath = sourceDir </> file
+        let destPath = replaceExtension (destDir </> file) ".html"
+        
+        template <- TIO.readFile "app/template.html"
+        content <- TIO.readFile sourcePath
+        let body = commonmarkToHtml [] content
+        let title = T.pack $ takeBaseName file
+        let html = T.replace "{{title}}" title 
+                $ T.replace "{{body}}" body template
+        
+        TIO.writeFile destPath html
