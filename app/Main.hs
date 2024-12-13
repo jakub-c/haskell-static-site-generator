@@ -23,6 +23,9 @@ main = do
     let destDir = "dist"
     let staticDir = "static"
 
+    _ <- clearDistDirectory destDir
+    clearDistDirectory destDir
+
     sourceExists <- checkSourceDirectory sourceDir
     when sourceExists $ do
         createDestinationDirectory destDir
@@ -202,6 +205,11 @@ copyStaticFiles sourceDir destDir = do
             let destPath = destDir </> file
             copyFile sourcePath destPath
         putStrLn $ "Copied static files to " ++ destDir
+-- Add function to clear dist directory
+clearDistDirectory :: FilePath -> IO ()
+clearDistDirectory dir = do
+    exists <- doesDirectoryExist dir
+    when exists $ removePathForcibly dir
 
 -- Add new helper function
 processRootFiles :: FilePath -> FilePath -> IO ()
