@@ -4,7 +4,8 @@ import System.Directory
     ( createDirectoryIfMissing,
       doesDirectoryExist,
       listDirectory,
-      copyFile )
+      copyFile,
+      removePathForcibly )
 import System.FilePath
     ( (</>), takeExtension, takeBaseName, takeDirectory, replaceExtension )
 import Control.Monad (unless, when, forM_)
@@ -18,7 +19,7 @@ import Data.Map (Map)
 
 main :: IO ()
 main = do
-    let sourceDir = "pages"          -- Changed from "notes" to "pages"
+    let sourceDir = "pages"
     let notesDir = sourceDir </> "notes"
     let destDir = "dist"
     let staticDir = "static"
@@ -30,12 +31,18 @@ main = do
     when sourceExists $ do
         createDestinationDirectory destDir
         copyStaticFiles staticDir destDir
-        processRootFiles sourceDir destDir  -- Add this line
+
+        -- Load templates
+        templateNotes <- TIO.readFile "app/template-notes.html"
+        templateStatic <- TIO.readFile "app/template-static.html"
+
+        -- Process root files with static template
+        processRootFiles sourceDir destDir templateStatic
         
         notesExists <- doesDirectoryExist notesDir
         when notesExists $ do
             mdFiles <- listMarkdownFiles notesDir
-            convertMarkdownFiles notesDir destDir mdFiles
+            convertMarkdownFiles notesDir destDir templateNotes mdFiles
 
 checkSourceDirectory :: FilePath -> IO Bool
 checkSourceDirectory sourceDir = do
@@ -64,10 +71,8 @@ createBacklinksMap linksMap = Map.fromListWith (++)
     ]
 
 -- Update convertMarkdownFiles to pass backlinks
-convertMarkdownFiles :: FilePath -> FilePath -> [FilePath] -> IO ()
-convertMarkdownFiles sourceDir destDir mdFiles = do
-    template <- TIO.readFile "app/template.html"
-    
+convertMarkdownFiles :: FilePath -> FilePath -> Text -> [FilePath] -> IO ()
+convertMarkdownFiles sourceDir destDir template mdFiles = do
     -- Create notes directory
     createDirectoryIfMissing True (destDir </> "notes")
     
@@ -212,8 +217,9 @@ clearDistDirectory dir = do
     when exists $ removePathForcibly dir
 
 -- Add new helper function
-processRootFiles :: FilePath -> FilePath -> IO ()
-processRootFiles sourceDir destDir = do
+-- Add new helper function
+processRootFiles :: FilePath -> FilePath -> T.Text -> IO ()
+processRootFiles sourceDir destDir template = do
     -- Get all .md files from root, excluding notes directory
     files <- listDirectory sourceDir
     let rootMdFiles = filter (\f -> takeExtension f == ".md") files
@@ -221,9 +227,9 @@ processRootFiles sourceDir destDir = do
     -- Process each file
     forM_ rootMdFiles $ \file -> do
         let sourcePath = sourceDir </> file
-        let destPath = replaceExtension (destDir </> file) ".html"
+        let slugName = T.unpack $ makeSlug $ T.pack $ takeBaseName file
+        let destPath = destDir </> slugName <> ".html"
         
-        template <- TIO.readFile "app/template.html"
         content <- TIO.readFile sourcePath
         let body = commonmarkToHtml [] content
         let title = T.pack $ takeBaseName file
