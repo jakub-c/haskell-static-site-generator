@@ -9,7 +9,7 @@ import System.Directory
 import System.FilePath
     ( (</>), takeExtension, takeBaseName, takeDirectory, replaceExtension )
 import Control.Monad (unless, when, forM_)
-import CMark (commonmarkToHtml)
+import CMark (commonmarkToHtml, optUnsafe)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.Char as C
@@ -24,7 +24,7 @@ main = do
     let destDir = "dist"
     let staticDir = "static"
 
-    _ <- clearDistDirectory destDir
+    -- Clear dist directory first
     clearDistDirectory destDir
 
     sourceExists <- checkSourceDirectory sourceDir
@@ -42,7 +42,7 @@ main = do
         notesExists <- doesDirectoryExist notesDir
         when notesExists $ do
             mdFiles <- listMarkdownFiles notesDir
-            convertMarkdownFiles notesDir destDir templateNotes mdFiles
+            convertMarkdownFiles notesDir destDir templateNotes templateStatic mdFiles
 
 checkSourceDirectory :: FilePath -> IO Bool
 checkSourceDirectory sourceDir = do
@@ -71,8 +71,8 @@ createBacklinksMap linksMap = Map.fromListWith (++)
     ]
 
 -- Update convertMarkdownFiles to pass backlinks
-convertMarkdownFiles :: FilePath -> FilePath -> Text -> [FilePath] -> IO ()
-convertMarkdownFiles sourceDir destDir template mdFiles = do
+convertMarkdownFiles :: FilePath -> FilePath -> Text -> Text -> [FilePath] -> IO ()
+convertMarkdownFiles sourceDir destDir templateNotes templateStatic mdFiles = do
     -- Create notes directory
     createDirectoryIfMissing True (destDir </> "notes")
     
@@ -90,6 +90,9 @@ convertMarkdownFiles sourceDir destDir template mdFiles = do
         
         -- Ensure directory exists
         createDirectoryIfMissing True (takeDirectory destPath)
+        
+        -- Choose template based on file name
+        let template = if baseName == "00 - index" then templateStatic else templateNotes
         convertFile template sourceDir destDir backlinksMap file destPath
         ) mdFiles
     
@@ -97,23 +100,41 @@ convertMarkdownFiles sourceDir destDir template mdFiles = do
 
 -- Update convertFile signature to accept backlinks
 convertFile :: T.Text -> FilePath -> FilePath -> BacklinksMap -> FilePath -> FilePath -> IO ()
-convertFile template sourceDir destDir backlinksMap file destPath = do
-    let sourcePath = sourceDir </> file
-    let baseName = takeBaseName file
+convertFile template sourceDir destDir backlinksMap sourcePath destPath = do
+    -- Read Markdown Content
     markdown <- TIO.readFile sourcePath
 
-    -- Rest remains the same
-    let currentBacklinks = Map.findWithDefault [] baseName backlinksMap
-    let backlinksHtml = T.concat
-            [ T.concat ["<li>", makeHtmlLink (T.pack (takeBaseName bl)) (T.pack bl), "</li>\n"]
-            | bl <- currentBacklinks]
+    -- Extract Base Name
+    let baseName = takeBaseName sourcePath
 
-    let body = replaceWikiLinks $ commonmarkToHtml [] markdown
+    -- Find Backlinks for this file
+    let currentBacklinks = Map.findWithDefault [] baseName backlinksMap
+
+    -- Generate Backlinks HTML
+    let backlinksHtml = T.concat 
+            [ "<li><a href=\"/notes/"
+            <> makeSlug (T.pack bl)
+            <> "\">"
+            <> T.pack (takeBaseName bl)
+            <> "</a></li>\n"
+            | bl <- currentBacklinks
+            ]
+
+    -- Convert Markdown to HTML and Replace Wiki Links
+    let body = replaceWikiLinks $ commonmarkToHtml [optUnsafe] markdown
+
+    -- Generate Title
     let title = T.pack baseName
 
-    let html = T.replace "{{title}}" title
-             $ T.replace "{{body}}" body
+    -- Replace Placeholders in Template
+    let html = T.replace "{{title}}" title 
+             $ T.replace "{{body}}" body 
              $ T.replace "{{backlinks}}" backlinksHtml template
+
+    -- Ensure Destination Directory Exists
+    createDirectoryIfMissing True (takeDirectory destPath)
+
+    -- Write the HTML File
     TIO.writeFile destPath html
 
 createDestPath :: FilePath -> FilePath -> FilePath -> IO FilePath
@@ -217,8 +238,7 @@ clearDistDirectory dir = do
     when exists $ removePathForcibly dir
 
 -- Add new helper function
--- Add new helper function
-processRootFiles :: FilePath -> FilePath -> T.Text -> IO ()
+processRootFiles :: FilePath -> FilePath -> Text -> IO ()
 processRootFiles sourceDir destDir template = do
     -- Get all .md files from root, excluding notes directory
     files <- listDirectory sourceDir
@@ -231,7 +251,7 @@ processRootFiles sourceDir destDir template = do
         let destPath = destDir </> slugName <> ".html"
         
         content <- TIO.readFile sourcePath
-        let body = commonmarkToHtml [] content
+        let body = commonmarkToHtml [optUnsafe] content
         let title = T.pack $ takeBaseName file
         let html = T.replace "{{title}}" title 
                 $ T.replace "{{body}}" body template
