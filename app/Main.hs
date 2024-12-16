@@ -42,7 +42,7 @@ main = do
         notesExists <- doesDirectoryExist notesDir
         when notesExists $ do
             mdFiles <- listMarkdownFiles notesDir
-            convertMarkdownFiles notesDir destDir templateNotes templateStatic mdFiles
+            convertMarkdownFiles sourceDir destDir templateNotes templateStatic mdFiles
 
 checkSourceDirectory :: FilePath -> IO Bool
 checkSourceDirectory sourceDir = do
@@ -70,37 +70,38 @@ createBacklinksMap linksMap = Map.fromListWith (++)
     , linkTarget <- links
     ]
 
+-- Helper function to get source file path
+getSourceFilePath :: FilePath -> FilePath -> FilePath
+getSourceFilePath sourceDir filename = sourceDir </> "notes" </> filename
+
+-- Helper function to get destination file path
+getDestFilePath :: FilePath -> FilePath -> FilePath
+getDestFilePath destDir filename = 
+    if filename == "00 - index.md"
+    then destDir </> "notes" </> "index.html"
+    else destDir </> "notes" </> slugName </> "index.html"
+    where slugName = T.unpack $ makeSlug $ T.pack $ takeBaseName filename
+
 -- Update convertMarkdownFiles to pass backlinks
 convertMarkdownFiles :: FilePath -> FilePath -> Text -> Text -> [FilePath] -> IO ()
 convertMarkdownFiles sourceDir destDir templateNotes templateStatic mdFiles = do
-    -- Create notes directory
     createDirectoryIfMissing True (destDir </> "notes")
-    
-    -- Collect wiki links and create backlinks map
-    linksMap <- collectWikiLinks sourceDir mdFiles
+    linksMap <- collectWikiLinks (sourceDir </> "notes") mdFiles
     let backlinksMap = createBacklinksMap linksMap
     
-    -- Process each file
     mapM_ (\file -> do
-        let baseName = takeBaseName file
-        let slugName = T.unpack $ makeSlug $ T.pack baseName
-        let destPath = if baseName == "00 - index"
-            then destDir </> "notes" </> "index.html"
-            else destDir </> "notes" </> slugName </> "index.html"
-        
-        -- Ensure directory exists
+        let sourcePath = getSourceFilePath sourceDir file
+        let destPath = getDestFilePath destDir file
         createDirectoryIfMissing True (takeDirectory destPath)
-        
-        -- Choose template based on file name
-        let template = if baseName == "00 - index" then templateStatic else templateNotes
-        convertFile template sourceDir destDir backlinksMap file destPath
+        let template = if file == "00 - index.md" then templateStatic else templateNotes
+        convertFile template sourcePath destPath backlinksMap file
         ) mdFiles
     
     putStrLn $ "Converted " ++ show (length mdFiles) ++ " markdown files to HTML"
 
 -- Update convertFile signature to accept backlinks
-convertFile :: T.Text -> FilePath -> FilePath -> BacklinksMap -> FilePath -> FilePath -> IO ()
-convertFile template sourceDir destDir backlinksMap sourcePath destPath = do
+convertFile :: T.Text -> FilePath -> FilePath -> BacklinksMap -> FilePath -> IO ()
+convertFile template sourcePath destPath backlinksMap filename = do
     -- Read Markdown Content
     markdown <- TIO.readFile sourcePath
 
