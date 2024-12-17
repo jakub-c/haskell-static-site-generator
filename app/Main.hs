@@ -114,7 +114,7 @@ convertFile template sourcePath destPath backlinksMap filename = do
     -- Generate Backlinks HTML
     let backlinksHtml = T.concat 
             [ "<li><a href=\"/notes/"
-            <> makeSlug (T.pack bl)
+            <> makeSlug (T.pack (takeBaseName bl))
             <> "\">"
             <> T.pack (takeBaseName bl)
             <> "</a></li>\n"
