@@ -138,15 +138,6 @@ convertFile template sourcePath destPath backlinksMap _filename = do
     -- Write the HTML File
     TIO.writeFile destPath html
 
-createDestPath :: FilePath -> FilePath -> FilePath -> IO FilePath
-createDestPath publicDir baseName _ =
-    if baseName == "00 - index"
-    then return $ publicDir </> "index.html"
-    else do
-        let noteDir = publicDir </> baseName
-        createDirectoryIfMissing True noteDir
-        return $ noteDir </> "index.html"
-
 replaceWikiLinks :: T.Text -> T.Text
 replaceWikiLinks text = processText text
   where
