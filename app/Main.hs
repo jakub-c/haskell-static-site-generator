@@ -19,30 +19,30 @@ import Data.Map (Map)
 
 main :: IO ()
 main = do
-    let sourceDir = "pages"
+    let sourceDir = "content"
     let notesDir = sourceDir </> "notes"
-    let destDir = "dist"
+    let publicDir = "public"
     let staticDir = "static"
 
-    -- Clear dist directory first
-    clearDistDirectory destDir
+    -- Clear public directory first
+    clearDistDirectory publicDir
 
     sourceExists <- checkSourceDirectory sourceDir
     when sourceExists $ do
-        createDestinationDirectory destDir
-        copyStaticFiles staticDir destDir
+        createDestinationDirectory publicDir
+        copyStaticFiles staticDir publicDir
 
         -- Load templates
         templateNotes <- TIO.readFile "app/template-notes.html"
         templateStatic <- TIO.readFile "app/template-static.html"
 
         -- Process root files with static template
-        processRootFiles sourceDir destDir templateStatic
+        processRootFiles sourceDir publicDir templateStatic
         
         notesExists <- doesDirectoryExist notesDir
         when notesExists $ do
             mdFiles <- listMarkdownFiles notesDir
-            convertMarkdownFiles sourceDir destDir templateNotes templateStatic mdFiles
+            convertMarkdownFiles sourceDir publicDir templateNotes templateStatic mdFiles
 
 checkSourceDirectory :: FilePath -> IO Bool
 checkSourceDirectory sourceDir = do
@@ -52,7 +52,7 @@ checkSourceDirectory sourceDir = do
     return sourceExists
 
 createDestinationDirectory :: FilePath -> IO ()
-createDestinationDirectory destDir = createDirectoryIfMissing True destDir
+createDestinationDirectory publicDir = createDirectoryIfMissing True publicDir
 
 listMarkdownFiles :: FilePath -> IO [FilePath]
 listMarkdownFiles sourceDir = do
@@ -76,22 +76,22 @@ getSourceFilePath sourceDir filename = sourceDir </> "notes" </> filename
 
 -- Helper function to get destination file path
 getDestFilePath :: FilePath -> FilePath -> FilePath
-getDestFilePath destDir filename = 
+getDestFilePath publicDir filename = 
     if filename == "00 - index.md"
-    then destDir </> "notes" </> "index.html"
-    else destDir </> "notes" </> slugName </> "index.html"
+    then publicDir </> "notes" </> "index.html"
+    else publicDir </> "notes" </> slugName </> "index.html"
     where slugName = T.unpack $ makeSlug $ T.pack $ takeBaseName filename
 
 -- Update convertMarkdownFiles to pass backlinks
 convertMarkdownFiles :: FilePath -> FilePath -> Text -> Text -> [FilePath] -> IO ()
-convertMarkdownFiles sourceDir destDir templateNotes templateStatic mdFiles = do
-    createDirectoryIfMissing True (destDir </> "notes")
+convertMarkdownFiles sourceDir publicDir templateNotes templateStatic mdFiles = do
+    createDirectoryIfMissing True (publicDir </> "notes")
     linksMap <- collectWikiLinks (sourceDir </> "notes") mdFiles
     let backlinksMap = createBacklinksMap linksMap
     
     mapM_ (\file -> do
         let sourcePath = getSourceFilePath sourceDir file
-        let destPath = getDestFilePath destDir file
+        let destPath = getDestFilePath publicDir file
         createDirectoryIfMissing True (takeDirectory destPath)
         let template = if file == "00 - index.md" then templateStatic else templateNotes
         convertFile template sourcePath destPath backlinksMap file
@@ -139,11 +139,11 @@ convertFile template sourcePath destPath backlinksMap filename = do
     TIO.writeFile destPath html
 
 createDestPath :: FilePath -> FilePath -> FilePath -> IO FilePath
-createDestPath destDir baseName _ =
+createDestPath publicDir baseName _ =
     if baseName == "00 - index"
-    then return $ destDir </> "index.html"
+    then return $ publicDir </> "index.html"
     else do
-        let noteDir = destDir </> baseName
+        let noteDir = publicDir </> baseName
         createDirectoryIfMissing True noteDir
         return $ noteDir </> "index.html"
 
@@ -240,7 +240,7 @@ clearDistDirectory dir = do
 
 -- Add new helper function
 processRootFiles :: FilePath -> FilePath -> Text -> IO ()
-processRootFiles sourceDir destDir template = do
+processRootFiles sourceDir publicDir template = do
     -- Get all .md files from root, excluding notes directory
     files <- listDirectory sourceDir
     let rootMdFiles = filter (\f -> takeExtension f == ".md") files
@@ -249,7 +249,7 @@ processRootFiles sourceDir destDir template = do
     forM_ rootMdFiles $ \file -> do
         let sourcePath = sourceDir </> file
         let slugName = T.unpack $ makeSlug $ T.pack $ takeBaseName file
-        let destPath = destDir </> slugName <> ".html"
+        let destPath = publicDir </> slugName <> ".html"
         
         content <- TIO.readFile sourcePath
         let body = commonmarkToHtml [optUnsafe] content
