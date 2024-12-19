@@ -7,7 +7,7 @@ import System.Directory
       copyFile,
       removePathForcibly )
 import System.FilePath
-    ( (</>), takeExtension, takeBaseName, takeDirectory, replaceExtension )
+    ( (</>), takeExtension, takeBaseName, takeDirectory )
 import Control.Monad (unless, when, forM_)
 import CMark (commonmarkToHtml, optUnsafe)
 import qualified Data.Text as T
