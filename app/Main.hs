@@ -101,7 +101,7 @@ convertMarkdownFiles sourceDir publicDir templateNotes templateStatic mdFiles = 
 
 -- Update convertFile signature to accept backlinks
 convertFile :: T.Text -> FilePath -> FilePath -> BacklinksMap -> FilePath -> IO ()
-convertFile template sourcePath destPath backlinksMap filename = do
+convertFile template sourcePath destPath backlinksMap _filename = do
     -- Read Markdown Content
     markdown <- TIO.readFile sourcePath
 
