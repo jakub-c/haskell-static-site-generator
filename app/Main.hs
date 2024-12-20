@@ -19,7 +19,7 @@ import Data.Map (Map)
 
 main :: IO ()
 main = do
-    let sourceDir = "content"
+    let sourceDir = "pages"
     let notesDir = sourceDir </> "notes"
     let publicDir = "public"
     let staticDir = "static"
