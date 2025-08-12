@@ -1,13 +1,13 @@
-# Static site generator in Haskell
+# Static Site Generator in Haskell
 
-## Reasons for starting project:
+## Reasons for Starting This Project:
 
-* learn Haskell and try out functional programming in the real world
-* learn LLM driven development and prompt engineering
-* move my current static site generator from JS stack to Haskell
-* get basic understanding of Haskell tooling and testing
+* Learn Haskell and try out functional programming in the real world
+* Learn LLM-driven development (or vibe coding) and prompt engineering
+* Move my current static site generator from a JS stack to Haskell
+* Get a basic understanding of Haskell tooling and testing
 
-## Running the code
+## Running the Code
 
 * `cabal run haskell-static-site-generator`
 * or simply `cabal run`
