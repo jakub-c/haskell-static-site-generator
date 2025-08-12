@@ -17,32 +17,47 @@ import Data.Text (Text)
 import qualified Data.Map as Map
 import Data.Map (Map)
 
+-- Configuration record for all directory paths
+data SiteConfig = SiteConfig
+    { sourceDir :: FilePath
+    , notesDir  :: FilePath  
+    , publicDir :: FilePath
+    , staticDir :: FilePath
+    } deriving (Show)
+
+-- Smart constructor that ensures notesDir is derived from sourceDir
+-- mk prefix stands for "make" and is a common convention in Haskell
+mkSiteConfig :: FilePath -> FilePath -> FilePath -> SiteConfig
+mkSiteConfig source public static = SiteConfig
+    { sourceDir = source
+    , notesDir  = source </> "notes"
+    , publicDir = public  
+    , staticDir = static
+    }
+
 main :: IO ()
 main = do
-    let sourceDir = "pages"
-    let notesDir = sourceDir </> "notes"
-    let publicDir = "public"
-    let staticDir = "static"
+    let config = mkSiteConfig "pages" "public" "static"
 
     -- Clear public directory first
-    clearDistDirectory publicDir
+    clearDistDirectory (publicDir config)
 
-    sourceExists <- checkSourceDirectory sourceDir
+    sourceExists <- checkSourceDirectory (sourceDir config)
     when sourceExists $ do
-        createDestinationDirectory publicDir
-        copyStaticFiles staticDir publicDir
+        createDestinationDirectory (publicDir config)
+        copyStaticFiles (staticDir config) (publicDir config)
 
         -- Load templates
         templateNotes <- TIO.readFile "app/template-notes.html"
         templateStatic <- TIO.readFile "app/template-static.html"
 
         -- Process root files with static template
-        processRootFiles sourceDir publicDir templateStatic
+        processRootFiles (sourceDir config) (publicDir config) templateStatic
         
-        notesExists <- doesDirectoryExist notesDir
+        notesExists <- doesDirectoryExist (notesDir config)
         when notesExists $ do
-            mdFiles <- listMarkdownFiles notesDir
-            convertMarkdownFiles sourceDir publicDir templateNotes templateStatic mdFiles
+            mdFiles <- listMarkdownFiles (notesDir config)
+            convertMarkdownFiles (sourceDir config) (publicDir config) templateNotes templateStatic mdFiles
 
 checkSourceDirectory :: FilePath -> IO Bool
 checkSourceDirectory sourceDir = do
