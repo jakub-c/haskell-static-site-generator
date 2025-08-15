@@ -1,3 +1,6 @@
+-- Helper to generate slug from a file name
+slugFromFileName :: FilePath -> String
+slugFromFileName = T.unpack . makeSlug . T.pack . takeBaseName
 {-# LANGUAGE OverloadedStrings #-}
 
 import System.Directory
@@ -94,8 +97,7 @@ getDestFilePath :: FilePath -> FilePath -> FilePath
 getDestFilePath publicDir filename = 
     if filename == "00 - index.md"
     then publicDir </> "notes" </> "index.html"
-    else publicDir </> "notes" </> slugName </> "index.html"
-    where slugName = T.unpack $ makeSlug $ T.pack $ takeBaseName filename
+    else publicDir </> "notes" </> slugFromFileName filename </> "index.html"
 
 -- Update convertMarkdownFiles to pass backlinks
 convertMarkdownFiles :: FilePath -> FilePath -> Text -> Text -> [FilePath] -> IO ()
@@ -252,17 +254,16 @@ processRootFiles sourceDir publicDir template = do
     -- Get all .md files from root, excluding notes directory
     files <- listDirectory sourceDir
     let rootMdFiles = filter (\f -> takeExtension f == ".md") files
-    
+
     -- Process each file
     forM_ rootMdFiles $ \file -> do
         let sourcePath = sourceDir </> file
-        let slugName = T.unpack $ makeSlug $ T.pack $ takeBaseName file
-        let destPath = publicDir </> slugName <> ".html"
-        
+        let destPath = publicDir </> slugFromFileName file <> ".html"
+
         content <- TIO.readFile sourcePath
         let body = commonmarkToHtml [optUnsafe] content
         let title = T.pack $ takeBaseName file
         let html = T.replace "{{title}}" title 
                 $ T.replace "{{body}}" body template
-        
+
         TIO.writeFile destPath html
