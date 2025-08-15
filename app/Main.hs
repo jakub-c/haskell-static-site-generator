@@ -156,6 +156,7 @@ replaceWikiLinks :: T.Text -> T.Text
 replaceWikiLinks text = processText text
   where
     -- Break into parts and process each
+    processText :: T.Text -> T.Text
     processText input =
         case T.splitOn "[[" input of
             [] -> ""                        -- Handle empty list case
@@ -165,6 +166,7 @@ replaceWikiLinks text = processText text
                 T.concat $ firstPart : map processPart otherParts
 
     -- Handle each part that came after [[
+    processPart :: T.Text -> T.Text
     processPart part =
         case T.splitOn "]]" part of
             -- No ]] found - return [[ + part
@@ -176,6 +178,7 @@ replaceWikiLinks text = processText text
             [] -> ""
 
     -- Convert wiki text to HTML link
+    makeLink :: T.Text -> T.Text
     makeLink linkText = makeHtmlLink linkText linkText
 
 makeSlug :: Text -> Text
