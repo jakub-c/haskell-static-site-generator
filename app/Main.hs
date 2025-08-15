@@ -103,15 +103,14 @@ convertMarkdownFiles sourceDir publicDir templateNotes templateStatic mdFiles = 
     createDirectoryIfMissing True (publicDir </> "notes")
     linksMap <- collectWikiLinks (sourceDir </> "notes") mdFiles
     let backlinksMap = createBacklinksMap linksMap
-    
-    mapM_ (\file -> do
+
+    forM_ mdFiles $ \file -> do
         let sourcePath = getSourceFilePath sourceDir file
         let destPath = getDestFilePath publicDir file
         createDirectoryIfMissing True (takeDirectory destPath)
         let template = if file == "00 - index.md" then templateStatic else templateNotes
         convertFile template sourcePath destPath backlinksMap file
-        ) mdFiles
-    
+
     putStrLn $ "Converted " ++ show (length mdFiles) ++ " markdown files to HTML"
 
 -- Update convertFile signature to accept backlinks
