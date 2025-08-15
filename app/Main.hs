@@ -1,6 +1,3 @@
--- Helper to generate slug from a file name
-slugFromFileName :: FilePath -> String
-slugFromFileName = T.unpack . makeSlug . T.pack . takeBaseName
 {-# LANGUAGE OverloadedStrings #-}
 
 import System.Directory
@@ -192,6 +189,10 @@ makeSlug = T.intercalate "-"                -- Join parts with hyphens
 -- Example usage:
 -- makeSlug "Wiki Link!" -> "wiki-link"
 -- makeLink "Wiki Link!" -> "<a href="wiki-link">Wiki Link!</a>"
+
+-- Helper to generate slug from a file name
+slugFromFileName :: FilePath -> String
+slugFromFileName = T.unpack . makeSlug . T.pack . takeBaseName
 
 extractWikiLinks :: T.Text -> [T.Text]
 extractWikiLinks text = go text []
