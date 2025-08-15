@@ -9,5 +9,11 @@
 
 ## Running the Code
 
+First, update the package index to download the latest package list from Hackage:
+
+* `cabal update`
+
+Then run the code:
+
 * `cabal run haskell-static-site-generator`
 * or simply `cabal run`
