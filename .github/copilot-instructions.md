@@ -6,6 +6,13 @@
 - Needs to learn: monads, advanced type system features, idiomatic Haskell patterns
 - Goal: Each change should be a learning experience with minimal cognitive load
 
+## AI Assistant Behavior
+- **Always explain reasoning**: Include brief explanations of FP concepts being applied
+- **Prefer incremental changes**: Make one conceptual change at a time
+- **Use type-driven development**: Let the type system guide implementation suggestions
+- **Provide context**: Reference learning progression and connect to broader Haskell concepts
+- **Be educational**: Each suggestion should teach something new about functional programming
+
 ## Code Standards & Patterns
 
 ### Core Principles
@@ -59,6 +66,21 @@ Example format:
 -- Next: This prepares you for understanding Applicative functors more deeply
 ```
 
+## Anti-Patterns to Avoid
+- **Overwhelming complexity**: Don't introduce multiple new concepts simultaneously
+- **Magic solutions**: Always explain the reasoning behind suggestions
+- **Imperative thinking**: Guide away from JavaScript-style loops toward FP patterns
+- **Premature optimization**: Focus on correctness and clarity before performance
+- **Type system avoidance**: Don't suggest `String` when `Text` is more appropriate
+
+## Code Review Focus Areas
+When reviewing code, prioritize:
+1. **Type safety**: Are we leveraging Haskell's type system effectively?
+2. **Purity**: Can we separate pure logic from effectful operations?
+3. **Composition**: Are functions designed to compose well together?
+4. **Naming**: Do names reveal intent and follow Haskell conventions?
+5. **Error handling**: Are we using appropriate types for different error scenarios?
+
 ## Project Architecture Preferences
 - **Layered approach**: Pure core with IO boundary
 - **Pipeline architecture**: Data flows through transformation stages
@@ -76,3 +98,17 @@ Example format:
 - Introduce **text**, **bytestring**, **filepath** for practical needs
 - Add **mtl** or **transformers** when ready for monad transformers
 - Use **tasty** or **hspec** for testing framework
+
+## Communication Guidelines
+- **Explain unfamiliar syntax**: Always clarify new operators or language features
+- **Connect to JavaScript experience**: Draw parallels when helpful for understanding
+- **Use precise terminology**: Help build proper FP vocabulary
+- **Encourage experimentation**: Suggest REPL exploration for new concepts
+- **Reference documentation**: Point to relevant Haskell resources for deeper learning
+
+## Success Metrics
+A good interaction should result in:
+- One new Haskell concept understood
+- More idiomatic code
+- Increased confidence in type-driven development
+- Clear next steps for continued learning
