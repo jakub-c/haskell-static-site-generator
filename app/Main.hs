@@ -12,10 +12,12 @@ import Control.Monad (unless, when, forM_)
 import CMark (commonmarkToHtml, optUnsafe)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Data.Char as C
 import Data.Text (Text)
 import qualified Data.Map as Map
 import Data.Map (Map)
+
+-- Import our pure functions from the library
+import SiteGenerator.Core (makeSlug, extractWikiLinks, replaceWikiLinks)
 
 -- Configuration record for all directory paths
 data SiteConfig = SiteConfig
@@ -151,63 +153,9 @@ convertFile template sourcePath destPath backlinksMap _filename = do
     -- Write the HTML File
     TIO.writeFile destPath html
 
-replaceWikiLinks :: T.Text -> T.Text
-replaceWikiLinks text = processText text
-  where
-    -- Break into parts and process each
-    processText :: T.Text -> T.Text
-    processText input =
-        case T.splitOn "[[" input of
-            [] -> ""                        -- Handle empty list case
-            [singlePart] -> singlePart
-            -- Found [[ - process parts
-            firstPart:otherParts ->
-                T.concat $ firstPart : map processPart otherParts
-
-    -- Handle each part that came after [[
-    processPart :: T.Text -> T.Text
-    processPart part =
-        case T.splitOn "]]" part of
-            -- No ]] found - return [[ + part
-            [partText] -> T.concat ["[[", partText]
-            -- Found ]] - make link and keep rest
-            linkText:rest ->
-                T.concat [makeLink linkText, T.concat rest]
-            -- Empty case
-            [] -> ""
-
-    -- Convert wiki text to HTML link
-    makeLink :: T.Text -> T.Text
-    makeLink linkText = makeHtmlLink linkText linkText
-
-makeSlug :: Text -> Text
-makeSlug = T.intercalate "-"                -- Join parts with hyphens
-         . filter (not . T.null)            -- Remove empty parts
-         . T.split (not . C.isAlphaNum)     -- Split on non-alphanumeric chars
-         . T.toLower                        -- Convert to lowercase
-
--- Example usage:
--- makeSlug "Wiki Link!" -> "wiki-link"
--- makeLink "Wiki Link!" -> "<a href="wiki-link">Wiki Link!</a>"
-
 -- Helper to generate slug from a file name
 slugFromFileName :: FilePath -> String
 slugFromFileName = T.unpack . makeSlug . T.pack . takeBaseName
-
-extractWikiLinks :: T.Text -> [T.Text]
-extractWikiLinks text = go text []
-    where
-        go t acc
-            | T.null t = acc
-            | otherwise =
-                case T.breakOn "[[" t of
-                    (_, rest)
-                        | T.null rest -> acc -- No more wiki links
-                        | otherwise ->
-                            let afterOpen = T.drop 2 rest
-                                (linkText, afterLink) = T.breakOn "]]" afterOpen
-                                remaining = T.drop 2 afterLink -- Drop the closing ]]
-                            in go remaining (linkText : acc)
 
 type WikiLinks = Map FilePath [T.Text]
 
@@ -219,18 +167,6 @@ collectWikiLinks sourceDir files = do
         return (file, links)
         ) files
     return $ Map.fromList pairs
-
--- Add this function at module level
-makeHtmlLink :: T.Text  -- ^ Link text to display
-             -> T.Text  -- ^ Target path/name to link to
-             -> T.Text  -- ^ Generated HTML link
-makeHtmlLink displayText targetName = T.concat
-    [ "<a href=\"/notes/"
-    , makeSlug targetName
-    , "/\">"
-    , displayText
-    , "</a>"
-    ]
 
 -- Add this function to copy static files
 copyStaticFiles :: FilePath -> FilePath -> IO ()
