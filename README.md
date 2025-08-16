@@ -17,3 +17,17 @@ Then run the code:
 
 * `cabal run haskell-static-site-generator`
 * or simply `cabal run`
+
+## Testing
+
+This project uses both unit tests and property-based tests to ensure code quality:
+
+**Run all tests:**
+* `cabal test`
+
+**Build the project:**
+* `cabal build`
+
+The test suite includes:
+- **Unit tests**: Specific examples testing known behaviors
+- **Property tests**: Mathematical invariants tested across hundreds of random inputs using QuickCheck

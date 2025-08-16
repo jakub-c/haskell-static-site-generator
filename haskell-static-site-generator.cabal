@@ -13,9 +13,9 @@ extra-doc-files: CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
-executable haskell-static-site-generator
+library
     import:           warnings
-    main-is:          Main.hs
+    exposed-modules:  SiteGenerator.Core
     build-depends:
         base >= 4.7 && < 5,
         directory,
@@ -23,5 +23,33 @@ executable haskell-static-site-generator
         filepath,
         cmark,
         text
-    hs-source-dirs:   app, src
+    hs-source-dirs:   src
+    default-language: GHC2021
+
+executable haskell-static-site-generator
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:
+        base >= 4.7 && < 5,
+        haskell-static-site-generator,
+        directory,
+        containers,
+        filepath,
+        cmark,
+        text
+    hs-source-dirs:   app
+    default-language: GHC2021
+
+test-suite tests
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          TestMain.hs
+    build-depends:
+        base >= 4.7 && < 5,
+        haskell-static-site-generator,
+        tasty,
+        tasty-quickcheck,
+        tasty-hunit,
+        text
+    hs-source-dirs:   test
     default-language: GHC2021
