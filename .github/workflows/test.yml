@@ -1,0 +1,43 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Haskell
+      uses: haskell-actions/setup@v2
+      with:
+        ghc-version: '9.12.2'
+        cabal-version: 'latest'
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cabal/packages
+          ~/.cabal/store
+          dist-newstyle
+        key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}
+        restore-keys: |
+          ${{ runner.os }}-cabal-
+    
+    - name: Update package index
+      run: cabal update
+    
+    - name: Build dependencies
+      run: cabal build --only-dependencies
+    
+    - name: Build project
+      run: cabal build
+    
+    - name: Run tests
+      run: cabal test --test-show-details=always
