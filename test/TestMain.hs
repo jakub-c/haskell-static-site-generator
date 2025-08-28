@@ -7,6 +7,7 @@ import Test.Tasty.QuickCheck
 import Test.Tasty.HUnit
 import qualified Data.Text as T
 import qualified Data.Char as C
+import Control.Exception (evaluate, try, ErrorCall)
 
 import SiteGenerator.Core
 
@@ -27,28 +28,48 @@ slugUnitTests = testGroup "makeSlug examples"
         makeSlug "Hello World" @?= "hello-world"
     , testCase "removes special chars" $ 
         makeSlug "Hello, World!" @?= "hello-world"
-    , testCase "empty string" $ 
-        makeSlug "" @?= ""
+    , testCase "unicode chars removed" $
+        makeSlug "café ★ test" @?= "caf-test"
     , testCase "already slug-like" $ 
         makeSlug "hello-world" @?= "hello-world"
+    , testCase "empty string fails" $ do
+        result <- try (evaluate (makeSlug ""))
+        case result of
+          Left (_ :: ErrorCall) -> return ()
+          Right _ -> assertFailure "Expected error for empty string"
     ]
 
--- Property tests: Test mathematical invariants
+-- Property tests: Test mathematical invariants  
 slugPropertyTests :: TestTree
 slugPropertyTests = testGroup "makeSlug properties"
-    [ testProperty "idempotent" prop_slug_idempotent
+    [ testProperty "idempotent on valid input" prop_slug_idempotent
     , testProperty "only safe characters" prop_slug_safe_chars
     ]
 
-prop_slug_idempotent :: String -> Bool
-prop_slug_idempotent input = 
-    let textInput = T.pack input
-    in makeSlug (makeSlug textInput) == makeSlug textInput
+-- Helper: Check if string has at least one ASCII alphanumeric character
+hasValidChar :: String -> Bool
+hasValidChar = any isAsciiAlphaNum
+  where
+    isAsciiAlphaNum c = (c >= 'a' && c <= 'z') || 
+                       (c >= 'A' && c <= 'Z') || 
+                       (c >= '0' && c <= '9')
 
-prop_slug_safe_chars :: String -> Bool
-prop_slug_safe_chars input = 
+-- Property: makeSlug is idempotent (applying twice = applying once)
+prop_slug_idempotent :: String -> Property
+prop_slug_idempotent input = 
+    hasValidChar input ==> 
+    let textInput = T.pack input
+        slug = makeSlug textInput
+    in makeSlug slug == slug
+
+-- Property: Result contains only safe URL characters
+prop_slug_safe_chars :: String -> Property  
+prop_slug_safe_chars input =
+    hasValidChar input ==>
     let result = makeSlug (T.pack input)
-    in T.all (\c -> C.isLower c || C.isDigit c || c == '-') result
+    in T.all isSafeChar result
+  where
+    isSafeChar c = C.isLower c || C.isDigit c || c == '-'
 
 -- Unit tests for wiki links
 wikiLinkUnitTests :: TestTree
