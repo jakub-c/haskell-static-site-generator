@@ -16,10 +16,15 @@ import Data.Text (Text)
 --   makeSlug "Multiple   Spaces" -> "multiple-spaces"
 --   makeSlug "Unicode ★ chars" -> "unicode-chars"
 makeSlug :: Text -> Text
-makeSlug = T.intercalate "-"                -- Join parts with hyphens
-         . filter (not . T.null)            -- Remove empty parts
-         . T.split (not . isAsciiAlphaNum)   -- Split on non-ASCII alphanumeric chars
-         . T.toLower                        -- Convert to lowercase
+makeSlug text = 
+  let slug = T.intercalate "-"                -- Join parts with hyphens
+           . filter (not . T.null)            -- Remove empty parts
+           . T.split (not . isAsciiAlphaNum)   -- Split on non-ASCII alphanumeric chars
+           . T.toLower                        -- Convert to lowercase
+           $ text
+  in if T.null slug 
+     then error $ "Cannot create slug from empty or invalid text: " ++ T.unpack text
+     else slug
   where
     -- Only ASCII letters and digits are considered safe for URLs
     isAsciiAlphaNum c = (c >= 'a' && c <= 'z') || 
