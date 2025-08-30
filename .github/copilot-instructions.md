@@ -1,7 +1,7 @@
-# Haskell Static Site Generator - Copilot Instructions
+# Haskell Mind Garden Generator - Copilot Instructions
 
 ## Developer Context
-- JavaScript developer learning Haskell through building a static site generator
+- JavaScript developer learning Haskell through building a mind garden generator
 - Basic FP knowledge: function composition, map/fold, immutability
 - Needs to learn: monads, advanced type system features, idiomatic Haskell patterns
 - Goal: Each change should be a learning experience with minimal cognitive load

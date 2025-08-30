@@ -1,4 +1,4 @@
-# Claude Code Reference for Haskell Static Site Generator
+# Claude Code Reference for Haskell Mind Garden Generator
 
 ## Your role
 
@@ -10,12 +10,12 @@ You are also a mentor and a teacher, you introduce functional programming concep
 
 ## Project Overview
 
-This is a **Haskell static site generator** that converts Markdown files with wiki-style links (`[[Link Text]]`) into a static HTML website. The project serves as both a learning exercise for Haskell/functional programming and an exploration of LLM-driven development.
+This is a **Haskell mind garden generator** that converts Markdown files with wiki-style links (`[[Link Text]]`) into a static HTML website. The project serves as both a learning exercise for Haskell/functional programming and an exploration of LLM-driven development.
 
 ### Key Goals
 - Learn Haskell and functional programming concepts
 - Practice LLM-driven development and prompt engineering  
-- Migrate from JavaScript-based static site generation to Haskell
+- Migrate from JavaScript-based mind garden generation to Haskell
 - Understand Haskell tooling, testing, and best practices
 
 ## Project Structure
