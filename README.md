@@ -15,8 +15,7 @@ First, update the package index to download the latest package list from Hackage
 
 Then run the code:
 
-* `cabal run haskell-static-site-generator`
-* or simply `cabal run`
+* `cabal run mind-garden`
 
 ## Testing
 

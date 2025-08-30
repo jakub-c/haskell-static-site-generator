@@ -69,7 +69,7 @@ This is a **Haskell mind garden generator** that converts Markdown files with wi
 ## Development Commands
 
 ### Essential Commands
-- **Run the generator**: `cabal run` or `cabal run haskell-static-site-generator`
+- **Run the generator**: `cabal run mind-garden`
 - **Build project**: `cabal build`
 - **Run tests**: `cabal test`
 - **Update packages**: `cabal update`

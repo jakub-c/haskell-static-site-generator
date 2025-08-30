@@ -1,5 +1,5 @@
 cabal-version:   3.4
-name:            haskell-static-site-generator
+name:            mind-garden
 version:         0.1.0.0
 homepage:        https://jkbc.io/
 license:         MIT
@@ -26,12 +26,12 @@ library
     hs-source-dirs:   src
     default-language: GHC2021
 
-executable haskell-static-site-generator
+executable mind-garden
     import:           warnings
     main-is:          Main.hs
     build-depends:
         base >= 4.7 && < 5,
-        haskell-static-site-generator,
+        mind-garden,
         directory,
         containers,
         filepath,
@@ -46,7 +46,7 @@ test-suite tests
     main-is:          TestMain.hs
     build-depends:
         base >= 4.7 && < 5,
-        haskell-static-site-generator,
+        mind-garden,
         tasty,
         tasty-quickcheck,
         tasty-hunit,
