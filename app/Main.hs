@@ -39,7 +39,7 @@ mkSiteConfig source public static = SiteConfig
 
 main :: IO ()
 main = do
-    let config = mkSiteConfig "pages" "public" "static"
+    let config = mkSiteConfig "content" "public" "static"
 
     -- Clear public directory first
     clearDistDirectory (publicDir config)
