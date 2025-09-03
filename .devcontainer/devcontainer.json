@@ -1,11 +1,23 @@
 {
     "name": "Haskell Development",
-    "image": "haskell:latest",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+        "ghcr.io/devcontainers-extra/features/haskell:2": {
+            "version": "9.4.8",
+            "cabal": "latest", 
+            "stack": "latest",
+            "ghcup": "latest"
+        }
+    },
     "customizations": {
         "vscode": {
             "extensions": [
                 "haskell.haskell"
-            ]
+            ],
+            "settings": {
+                "haskell.manageHLS": "GHCup"
+            }
         }
-    }
+    },
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y libgmp-dev"
 }
