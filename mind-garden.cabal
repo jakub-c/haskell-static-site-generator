@@ -13,6 +13,9 @@ extra-doc-files: CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
+common optimizations
+    ghc-options: -O2 -optl-s -optc-Os
+
 library
     import:           warnings
     exposed-modules:  SiteGenerator.Core
@@ -27,7 +30,7 @@ library
     default-language: GHC2021
 
 executable mind-garden
-    import:           warnings
+    import:           warnings, optimizations
     main-is:          Main.hs
     build-depends:
         base >= 4.7 && < 5,
